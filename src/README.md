@@ -89,9 +89,9 @@ This proof-of-concept relies on crafting Layer 2 packets.  It therefore requires
 ### Running the Demonstration
 1. Open Wireshark on the receiver.  Select the appropriate interface, but don't start capturing until you are ready to send, as the capture file will grow quickly.
 
-2. Run the program on the transmitter, specifying your message on the command line, via a text file, or through the interactive prompt.  Run `beaconStuffing.py -h` for syntax details.
+2. Run the program on the transmitter, specifying your message on the command line, via a text file, or through the interactive prompt.  The file `bee.txt` is provided to demonstrate how packet fragmentation is handled. Run `beaconStuffing.py -h` for syntax details.
     ```bash
-    ./beaconStuffing.py send message
+    ./beaconStuffing.py send -f bee.txt
     ```
 
 3. Save the capture and load it using the same program.
