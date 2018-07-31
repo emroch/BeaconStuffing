@@ -72,7 +72,44 @@ Wireless communications are necessarily observable by anyone within range of the
 
 At times, information secrecy can be just as important as information security.  Encryption can provide information security - unauthorized individuals will be unable to interpret any information they collect - though it does not provide secrecy, anyone may still monitor the communication.  In times when the simple act of communicating can be just as revealing as the information being shared, it is important that there is no easy way to locate communicating devices.  In a wireless network, all communication is visible to any observer.  However, secrecy does not imply invisibility - communication may still take place on a public channel if an observer is unable to detect it.  The IEEE 802.11 protocol defines several types of network management frames, one of which is a \textit{beacon}, which broadcasts information about the network capabilities of an Access Point (AP).  Beacons are a common sight in wireless network traffic analysis, and as such make for a prime candidate for masking transmissions.  If done correctly, an observer will not know the difference between standard network management traffic and covert communication.
 
-% \section{PROCEDURE FOR PAPER SUBMISSION}
+Wireless clients listen for beacon frames to determine which networks are available to join.  To facilitate that decision, beacons contain information about the supported data rates, power levels, and encryption standards. Sometimes it is necessary for AP vendors to include non-standard data specific to the AP.  The 802.11 standard provides a mechanism for this by allowing vendor-specific payloads to be attached to management frames. 
+
+In this paper, we will explore the use of these vendor-specific payloads as a means for transmitting arbitrary data, with a specific focus on applications where secrecy is desired.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{RELATED WORK}
+
+Several other researchers have looked into using beacons as a means for communication. Among these, R. Chandra et al. proposed overloading the Service Set Identifier (SSID), Basic Service Set Identifier (BSSID) and vendor-specific information element (IE) fields \cite{c1}.  Additionally, Gupta and Rohil proposed utilizing unused bits in the length field of each IE \cite{c2}.  The following sections will introduce these techniques and discuss the advantages and shortcomings of each.
+
+\subsection{SSID}
+The SSID is a unique identifier of the wireless network. All devices connected to a network must agree on the SSID.  It can be up to 32 alpha-numeric characters, or 32 bytes. R. Chandra et al. proposed using an encoding scheme of a 1 byte message identifier, followed by 1 byte containing a 7-bit fragment counter and a flag indicating more fragments are available, finally followed by the data.  This leaves a maximum of 30 bytes available for data, though the available space will realistically be lower as the base SSID will likely include some identifiable string (i.e. "netXXXXXXXXXXXX...", where XXXXX is the data appended to the original SSID, "net").  Assuming a beacon interval of about 10ms, this gives a maximum data rate of 24 Kbps.
+
+\subsection{BSSID}
+The BSSID is a 6 byte field which traditionally represents the MAC address of the AP.  However, since the AP MAC address is included in the MAC header of the frame as the transmitter address, this field can be set to any value. By establishing a known SSID, devices may check the BSSID field of matching beacon frames to extract the data. Using the same serialization as before, we can fit 4 data bytes into the BSSID field, giving a transmission rate of 3.2 Kbps.
+
+\subsection{Vendor Information Element}
+The 802.11 standard includes a general specification for AP vendors to include up to 253 bytes of data in a special IE.  The format of these information elements is a 3 byte vendor Organizationally Unique Identifier (OUI), a 1 byte vendor-specific type, and up to 252 bytes of data. The IE can either contain the actual OUI with a type to indicate data, providing 252 bytes per frame, or the OUI can be a constant fake value and the type can be used for either data or providing segmentation information.  Again assuming an interval of 10ms, this gives a transmission rate of about 200 Kbps.
+
+\subsection{Information Element Length Field}
+Gupta and Rohil proposed a new method, utilizing unused bits in the length field of each IE. Each IE type has a predefined maximum length, some of which require fewer than 8 bits to represent, meaning there are unused bits that are always assumed to be zero.  Firmware modification on the client device would mask out these extra bits to obtain the real length value and reassemble the data using the leftover bits. Based on the table compiled by Gupta and Rohil, this method provides up to 191 bits per frame if every IE is present \cite{c2}. This provides a transmission rate of 19.1 Kbps at a 10ms interval.  Realistically, this will be lower as not every IE will be present.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Comparison of Data Embedding Techniques}
+The SSID approach is by far the easiest to implement -- it requires no modification to the drivers on the client or AP. However, most client devices (such as phones, tablets, laptops, etc.) display the SSID to the user for the purpose of selecting a network, which means the data would be visible to the user.  This is not desirable, especially in the context of covert communication, so this approach will not be considered further.
+
+The BSSID offers a promising alternative to the SSID, as it is not client-facing.  Two major limitations are that the BSSID field is not always available (e.g. if the source address is a group address, in which case the BSSID is validated), and it is limited to just 6 bytes per frame \cite{c2}.  Using the BSSID also requires firmware modifications on both the client and AP.
+
+Using the IE length field is an interesting approach and has a considerable advantage in that it utilizes bits that would otherwise go to waste. This means that you can transmit almost 200 bits per frame with no bandwidth cost.  The major limitation is that this method is computationally difficult, requiring separate data structures for storing the locations of these extra bits and preprocessing the whole frame before zeroing out the extra data and passing it on to higher layers. Another drawback is that this method requires modification to the firmware to accommodate future changes to the 802.11 standard which introduce new IE.
+
+The vendor IE approach has the advantage of allowing the most data in a single frame of the methods discussed here, as well as having very little computational cost.  One drawback is that embedding longer data increases frame size, which could congest the network.  However, for the purposes of this paper, we will assume that the data is either short enough to fit in one or two frames, or is not time sensitive and can be buffered until the network is idle. While this method does require firmware modification, the technique is robust and should not be affected by changes to the 802.11 specification.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section{SECTION TITLE}
 
 % \subsection{Selecting a Template (Heading 2)}
 
@@ -178,21 +215,21 @@ At times, information secrecy can be just as important as information security. 
 % A conclusion section is not required. Although a conclusion may review the main points of the paper, do not replicate the abstract as the conclusion. A conclusion might elaborate on the importance of the work or suggest applications and extensions. 
 
 % \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
-%                                   % on the last page of the document manually. It shortens
-%                                   % the textheight of the last page by a suitable amount.
-%                                   % This command does not take effect until the next page
-%                                   % so it should come on the page before the last. Make
-%                                   % sure that you do not shorten the textheight too much.
+                                  % on the last page of the document manually. It shortens
+                                  % the textheight of the last page by a suitable amount.
+                                  % This command does not take effect until the next page
+                                  % so it should come on the page before the last. Make
+                                  % sure that you do not shorten the textheight too much.
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % \section*{APPENDIX}
 
 % Appendixes should appear before the acknowledgment.
@@ -209,10 +246,10 @@ At times, information secrecy can be just as important as information security. 
 
 
 
-% \begin{thebibliography}{99}
+\begin{thebibliography}{99}
 
-% \bibitem{c1} G. O. Young, ÒSynthetic structure of industrial plastics (Book style with paper title and editor),Ó 	in Plastics, 2nd ed. vol. 3, J. Peters, Ed.  New York: McGraw-Hill, 1964, pp. 15Ð64.
-% \bibitem{c2} W.-K. Chen, Linear Networks and Systems (Book style).	Belmont, CA: Wadsworth, 1993, pp. 123Ð135.
+\bibitem{c1} R. Chandra, J. Padhye, L. Ravindranath, and A. Wolman, “Beacon-Stuffing: Wi-Fi without Associations,” Eighth IEEE Workshop on Mobile Computing Systems and Applications, 2007.
+\bibitem{c2} V. Gupta and M. K. Rohil, “Bit-Stuffing in 802. 11 Beacon Frame: Embedding Non-Standard Custom Information,” International Journal of Computer Applications, vol. 63, no. 2, pp. 6–12, Feb. 2013.
 % \bibitem{c3} H. Poor, An Introduction to Signal Detection and Estimation.   New York: Springer-Verlag, 1985, ch. 4.
 % \bibitem{c4} B. Smith, ÒAn approach to graphs of linear forms (Unpublished work style),Ó unpublished.
 % \bibitem{c5} E. H. Miller, ÒA note on reflector arrays (Periodical styleÑAccepted for publication),Ó IEEE Trans. Antennas Propagat., to be publised.
@@ -232,12 +269,7 @@ At times, information secrecy can be just as important as information security. 
 % \bibitem{c19} N. Kawasaki, ÒParametric study of thermal and chemical nonequilibrium nozzle flow,Ó M.S. thesis, Dept. Electron. Eng., Osaka Univ., Osaka, Japan, 1993.
 % \bibitem{c20} J. P. Wilkinson, ÒNonlinear resonant circuit devices (Patent style),Ó U.S. Patent 3 624 12, July 16, 1990. 
 
-
-
-
-
-
-% \end{thebibliography}
+\end{thebibliography}
 
 
 
