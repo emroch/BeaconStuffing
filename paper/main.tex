@@ -15,6 +15,8 @@
 % on the last page of the document
 
 
+\usepackage{graphicx}
+\usepackage{minted}
 
 % The following packages can be found on http:\\www.ctan.org
 %\usepackage{graphics} % for pdf, bitmapped graphics files
@@ -74,7 +76,7 @@ At times, information secrecy can be just as important as information security. 
 
 Wireless clients listen for beacon frames to determine which networks are available to join.  To facilitate that decision, beacons contain information about the supported data rates, power levels, and encryption standards. Sometimes it is necessary for AP vendors to include non-standard data specific to the AP.  The 802.11 standard provides a mechanism for this by allowing vendor-specific payloads to be attached to management frames. 
 
-In this paper, we will explore the use of these vendor-specific payloads as a means for transmitting arbitrary data, with a specific focus on applications where secrecy is desired.
+In this paper, we will explore beacon stuffing -- the use of these vendor-specific payloads as a means for transmitting arbitrary data -- with a specific focus on applications where secrecy is desired.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -83,20 +85,25 @@ In this paper, we will explore the use of these vendor-specific payloads as a me
 Several other researchers have looked into using beacons as a means for communication. Among these, R. Chandra et al. proposed overloading the Service Set Identifier (SSID), Basic Service Set Identifier (BSSID) and vendor-specific information element (IE) fields \cite{c1}.  Additionally, Gupta and Rohil proposed utilizing unused bits in the length field of each IE \cite{c2}.  The following sections will introduce these techniques and discuss the advantages and shortcomings of each.
 
 \subsection{SSID}
+
 The SSID is a unique identifier of the wireless network. All devices connected to a network must agree on the SSID.  It can be up to 32 alpha-numeric characters, or 32 bytes. R. Chandra et al. proposed using an encoding scheme of a 1 byte message identifier, followed by 1 byte containing a 7-bit fragment counter and a flag indicating more fragments are available, finally followed by the data.  This leaves a maximum of 30 bytes available for data, though the available space will realistically be lower as the base SSID will likely include some identifiable string (i.e. "netXXXXXXXXXXXX...", where XXXXX is the data appended to the original SSID, "net").  Assuming a beacon interval of about 10ms, this gives a maximum data rate of 24 Kbps.
 
 \subsection{BSSID}
-The BSSID is a 6 byte field which traditionally represents the MAC address of the AP.  However, since the AP MAC address is included in the MAC header of the frame as the transmitter address, this field can be set to any value. By establishing a known SSID, devices may check the BSSID field of matching beacon frames to extract the data. Using the same serialization as before, we can fit 4 data bytes into the BSSID field, giving a transmission rate of 3.2 Kbps.
+
+The BSSID is a 6 byte field which traditionally represents the media access control (MAC) address of the AP.  However, since the AP MAC address is included in the MAC header of the frame as the transmitter address, this field can be set to any value. By establishing a known SSID, devices may check the BSSID field of matching beacon frames to extract the data. Using the same serialization as before, we can fit 4 data bytes into the BSSID field, giving a transmission rate of 3.2 Kbps.
 
 \subsection{Vendor Information Element}
+
 The 802.11 standard includes a general specification for AP vendors to include up to 253 bytes of data in a special IE.  The format of these information elements is a 3 byte vendor Organizationally Unique Identifier (OUI), a 1 byte vendor-specific type, and up to 252 bytes of data. The IE can either contain the actual OUI with a type to indicate data, providing 252 bytes per frame, or the OUI can be a constant fake value and the type can be used for either data or providing segmentation information.  Again assuming an interval of 10ms, this gives a transmission rate of about 200 Kbps.
 
 \subsection{Information Element Length Field}
+
 Gupta and Rohil proposed a new method, utilizing unused bits in the length field of each IE. Each IE type has a predefined maximum length, some of which require fewer than 8 bits to represent, meaning there are unused bits that are always assumed to be zero.  Firmware modification on the client device would mask out these extra bits to obtain the real length value and reassemble the data using the leftover bits. Based on the table compiled by Gupta and Rohil, this method provides up to 191 bits per frame if every IE is present \cite{c2}. This provides a transmission rate of 19.1 Kbps at a 10ms interval.  Realistically, this will be lower as not every IE will be present.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Comparison of Data Embedding Techniques}
+
 The SSID approach is by far the easiest to implement -- it requires no modification to the drivers on the client or AP. However, most client devices (such as phones, tablets, laptops, etc.) display the SSID to the user for the purpose of selecting a network, which means the data would be visible to the user.  This is not desirable, especially in the context of covert communication, so this approach will not be considered further.
 
 The BSSID offers a promising alternative to the SSID, as it is not client-facing.  Two major limitations are that the BSSID field is not always available (e.g. if the source address is a group address, in which case the BSSID is validated), and it is limited to just 6 bytes per frame \cite{c2}.  Using the BSSID also requires firmware modifications on both the client and AP.
@@ -107,7 +114,83 @@ The vendor IE approach has the advantage of allowing the most data in a single f
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{POTENTIAL APPLICATIONS}
 
+There are numerous potential applications for embedding data in beacon frames.  We will list a variety of them here, but the main focus of this paper is on applications in which the act of communicating must be concealed.
+
+\subsection{Location based advertisements}
+
+Targeted advertising is mutually beneficial to both consumers and marketers.  By narrowing the audience to just those who are likely to act on the advertisement, resources can be used more efficiently.  Location based advertisements are a good way to target a group of people who will likely be interested in a topic, coupon, etc.  However, privacy is a growing concern among users, and using standard location services such as GPS requires either substantial access to the system or an always running application to send location data, neither of which are ideal. Due to the limited range of wireless signals, advertisements served from an AP will only reach devices in the immediate vicinity, thus providing localization without needing to gather user data.
+
+Beacon stuffing can be used to embed advertisement data such that all devices within range of the AP receive the advertisement or coupon.  This would, however, require driver modification in order to present the embedded data to a user.
+
+\subsection{Network monitoring/data extraction}
+
+Since beacon stuffing requires modification of the firmware on the AP, we will assume that we have complete access to the AP, but not necessarily to the networks broadcast by the AP (e.g. a compromised AP).  In such a scenario, we can use beacon stuffing to extract information about a network or specific traffic without showing suspicious traffic.  Special software running on the AP could collect and log data about connected clients and traffic patterns, then dump the log (or a summary) via beacon stuffing on request.  An adversary could use this to gather metadata about a network without ever connecting to it.  Although the actual data transmitted would be secure (assuming some level of transport security), the knowledge of who connects to whom and when could be just as useful.
+
+\subsection{Low-overhead burst communication}
+
+Consider a situation where a group of devices in the same vicinity, but not necessarily on the same network, need to receive information from a central authority at the same time.  One solution would be to send a broadcast or multicast TCP message on each network containing target devices.  This would require the formation of a distinct data frame for each network, which will increase the overhead as more networks are added.  This requires that every device is associated with a network.  Alternatively, we can use beacon stuffing to communicate to all of these devices across multiple networks simultaneously, with fixed overhead.  In such a scenario, we might set up a WLAN called "announcements" which each target device would be able to receive beacons from, even if they are associated with another network.  By stuffing the beacons for this announcements WLAN, all devices in the area can receive the same message with a fixed overhead of a single beacon frame.
+
+\subsection{Covert communication}
+
+In a situation where an agent must receive information from or report back to a supervisor, but the agent cannot risk the discovery of the communication, beacon stuffing can simplify the setup required. If the supervisor can gain control of a public AP, the agent can communicate simply by being in range of the AP without ever connecting or sending any data frames.  In this way, someone trying to identify an undercover agent would need special knowledge of the communication system in order to detect that this communication is taking place.  Without advance knowledge, this would look just like a typical beacon or probe request.  Due to the sheer number of these in a short time frame, manually filtering a network capture is infeasible. A scripted search could be performed, but at that point the attacker knows about the communication channel and we would have to fall back on encryption.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{BEACON FRAME FORMAT}
+
+The 802.11 protocol describes a standard format for beacon frames, which are a type of management frame.  Each beacon frame consists of a MAC header, body, and frame check sequence (FCS).  The MAC header contains information such as source and destination addresses, sequence and fragment IDs, and control flags.  The FCS is simply an error detection mechanism that signals the recipient to discard damaged frames.
+
+\begin{figure}[h!]
+% 	\centering
+    \includegraphics[width=3.25in]{beaconFrame.png}
+    \caption{General structure of 802.11 beacon frame.  The MAC header is shown in light gray, the beacon payload is shown in dark gray.}
+    \label{fig:beacon}
+\end{figure}
+
+The body of a beacon frame is made up of several required fields and IE, and may contain additional IE.  The required fields are timestamp, interval, and capabilities, followed by two IE containing the SSID and supported rates. The body may then contain more IE, up to a total frame size of 2304 bytes. Each IE can be up to 257 bytes, containing a 1 byte ID, 1 byte length field, and $N$ data bytes, where $N$ is the value in the length field.  For the vendor IE, the first 4 data bytes are the vendor's OUI and a type specifier, as shown in Figure \ref{fig:vendorIE}.
+
+\begin{figure}[h!]
+% 	\centering
+	\includegraphics[width=3.25in]{vendorIE.png}
+    \caption{Structure of Vendor-Specific IE}
+    \label{fig:vendorIE}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{IMPLEMENTATION}
+
+As a proof-of-concept to show that beacon stuffing is feasible, we will explore a simple implementation that utilizes the vendor IE.  For sake of brevity and simplicity, we will only consider one AP chipset, the Ralink RT3070L, connected via USB to an Ubuntu host.  The only requirement for this demonstration is that the transmitter chipset supports packet injection.  This should otherwise be completely general.
+
+\subsection{Data Protection}
+
+Some applications of beacon stuffing may require the data to be secure and most will want some form of integrity check to prevent malicious inspection or modification of the data.  For this example, we will use a symmetric encryption scheme from the Python Cryptography package known as Fernet encryption, which utilizes AES-128-CBC for encryption and SHA256 based HMAC for integrity \cite{c5}.  To use this, we encrypt the message before constructing the beacon. This will be discussed more in the Results and Considerations section.
+
+\subsection{Frame Creation}
+
+While it does not matter how the frame is actually created (it could be written directly in binary), we will use a Python library called Scapy \cite{c4} to assist with frame creation.
+
+To generate a stuffed beacon frame, we first create a basic frame containing the MAC header.  We then split the message into chunks of 251 bytes, if neccessary, and embed them into vendor IE which are then attached to the base frame as a payload.  If there were multiple chunks, we have a fragmented frame, so we will use the MAC header's \textit{fragment ID} field and \textit{More Fragments} flag to indicate to the receiver that the message is fragmented.
+
+\subsection{Message Recovery}
+
+To recover the original message, we must first record the transmitted beacons.  This is easy to do using Wireshark \cite{c6} another computer.  By saving a packet capture file which contains our custom beacon, we can use Scapy and Python again to filter the file and recover the message.  We start by loading the saved capture file, then apply a filter based on some criteria which are unique to our beacons.  This could be an SSID (such as "announcements"), a BSSID, or a special IE.  After obtaining a filtered list of just the stuffed packets, we can dissect them to extract the IE containing our message.  We will store the extracted message pieces in a dictionary keyed with the fragment ID of the packet, which allows us to reconstruct the original message if the beacons are out of order and to determine if any pieces are missing.  Once reassembled, the message can be decrypted and processed.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{RESULTS AND CONSIDERATIONS}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{FUTURE WORK}
+
+
+
+
+\newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % \section{SECTION TITLE}
 
@@ -248,12 +331,12 @@ The vendor IE approach has the advantage of allowing the most data in a single f
 
 \begin{thebibliography}{99}
 
-\bibitem{c1} R. Chandra, J. Padhye, L. Ravindranath, and A. Wolman, “Beacon-Stuffing: Wi-Fi without Associations,” Eighth IEEE Workshop on Mobile Computing Systems and Applications, 2007.
-\bibitem{c2} V. Gupta and M. K. Rohil, “Bit-Stuffing in 802. 11 Beacon Frame: Embedding Non-Standard Custom Information,” International Journal of Computer Applications, vol. 63, no. 2, pp. 6–12, Feb. 2013.
-% \bibitem{c3} H. Poor, An Introduction to Signal Detection and Estimation.   New York: Springer-Verlag, 1985, ch. 4.
-% \bibitem{c4} B. Smith, ÒAn approach to graphs of linear forms (Unpublished work style),Ó unpublished.
-% \bibitem{c5} E. H. Miller, ÒA note on reflector arrays (Periodical styleÑAccepted for publication),Ó IEEE Trans. Antennas Propagat., to be publised.
-% \bibitem{c6} J. Wang, ÒFundamentals of erbium-doped fiber amplifiers arrays (Periodical styleÑSubmitted for publication),Ó IEEE J. Quantum Electron., submitted for publication.
+\bibitem{c1} R. Chandra, J. Padhye, L. Ravindranath, and A. Wolman, “Beacon-Stuffing: Wi-Fi without Associations,” \textit{Eighth IEEE Workshop on Mobile Computing Systems and Applications}, 2007.
+\bibitem{c2} V. Gupta and M. K. Rohil, “Bit-Stuffing in 802. 11 Beacon Frame: Embedding Non-Standard Custom Information,” \textit{International Journal of Computer Applications}, vol. 63, no. 2, pp. 6–12, Feb. 2013.
+\bibitem{c3} M. S. Gast, \textit{802.11 Wireless Networks: The Definitive Guide}, 2nd ed. Beijing: O'Reilly, 2013.
+\bibitem{c4} P. Biondi, “Scapy,” \textit{Scapy}. [Online]. Available: https://scapy.net/. [Accessed: 02-Aug-2018].
+\bibitem{c5} “Fernet (symmetric encryption),” \textit{Welcome to pyca/cryptography}. [Online]. Available: https://cryptography.io/en/latest/fernet/. [Accessed: 02-Aug-2018].
+\bibitem{c6} “Wireshark,” \textit{Wireshark Documentation}. [Online]. Available: https://www.wireshark.org/. [Accessed: 02-Aug-2018].
 % \bibitem{c7} C. J. Kaufman, Rocky Mountain Research Lab., Boulder, CO, private communication, May 1995.
 % \bibitem{c8} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ÒElectron spectroscopy studies on magneto-optical media and plastic substrate interfaces(Translation Journals style),Ó IEEE Transl. J. Magn.Jpn., vol. 2, Aug. 1987, pp. 740Ð741 [Dig. 9th Annu. Conf. Magnetics Japan, 1982, p. 301].
 % \bibitem{c9} M. Young, The Techincal Writers Handbook.  Mill Valley, CA: University Science, 1989.
