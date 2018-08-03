@@ -188,11 +188,10 @@ def _build_frames(net_SSID, message='', fernet=None):
     essid = Dot11Elt(ID='SSID', info=net_SSID, len=len(net_SSID))
     base_frame = RadioTap() / dot11 / beacon / essid
 
-    # Divide the token into chunks of 251 bytes (we should be able to use n=252, but
-    # Scapy throws an error).  If the token requires more than one chunk, present the
-    # user with an opportunity to cancel as fragmented frames can be suspicious in a
-    # network analysis tool.  Messages may not be split among more than 16 frames, as
-    # the fragment ID field is only 4 bits.
+    # Divide the token into chunks of 251 bytes.  If the token requires more than
+    # one chunk, present the user with an opportunity to cancel as fragmented frames
+    # can be suspicious in a network analysis tool.  Messages may not be split among
+    # more than 16 frames, as the fragment ID field is only 4 bits.
     n = 251
     chunks = [token[i:i + n] for i in range(0, len(token), n)]
 
