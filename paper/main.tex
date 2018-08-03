@@ -4,8 +4,6 @@
 
 \documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out
                                                           % if you need a4paper
-%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4
-                                                          % paper
 
 \IEEEoverridecommandlockouts                              % This command is only
                                                           % needed if you want to
@@ -15,8 +13,8 @@
 % on the last page of the document
 
 
-\usepackage{graphicx}
-\usepackage{minted}
+\usepackage{graphicx}	% for charts and figures
+\usepackage{minted}		% for code syntax highlighting
 
 % The following packages can be found on http:\\www.ctan.org
 %\usepackage{graphics} % for pdf, bitmapped graphics files
@@ -72,7 +70,7 @@ Wireless communications are necessarily observable by anyone within range of the
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{INTRODUCTION}
 
-At times, information secrecy can be just as important as information security.  Encryption can provide information security - unauthorized individuals will be unable to interpret any information they collect - though it does not provide secrecy, anyone may still monitor the communication.  In times when the simple act of communicating can be just as revealing as the information being shared, it is important that there is no easy way to locate communicating devices.  In a wireless network, all communication is visible to any observer.  However, secrecy does not imply invisibility - communication may still take place on a public channel if an observer is unable to detect it.  The IEEE 802.11 protocol defines several types of network management frames, one of which is a \textit{beacon}, which broadcasts information about the network capabilities of an Access Point (AP).  Beacons are a common sight in wireless network traffic analysis, and as such make for a prime candidate for masking transmissions.  If done correctly, an observer will not know the difference between standard network management traffic and covert communication.
+At times, information secrecy can be just as important as confidentiality.  Encryption can provide confidentiality -- unauthorized individuals will be unable to interpret any information they collect -- though it does not provide secrecy, anyone may still monitor the communication.  In times when the simple act of communicating can be as revealing as the information being shared, it is important that there is no easy way to locate communicating devices.  In a wireless network, all communication is visible to any observer.  However, secrecy does not imply invisibility - communication may still take place on a public channel if an observer is unable to detect it.  The IEEE 802.11 protocol defines several types of network management frames, one of which is a \textit{beacon}, which broadcasts information about the network capabilities of an Access Point (AP).  Beacons are a common sight in wireless network traffic analysis, and as such make for a prime candidate for masking transmissions.  If done correctly, an observer will not know the difference between standard network management traffic and covert communication.
 
 Wireless clients listen for beacon frames to determine which networks are available to join.  To facilitate that decision, beacons contain information about the supported data rates, power levels, and encryption standards. Sometimes it is necessary for AP vendors to include non-standard data specific to the AP.  The 802.11 standard provides a mechanism for this by allowing vendor-specific payloads to be attached to management frames. 
 
@@ -86,7 +84,7 @@ Several other researchers have looked into using beacons as a means for communic
 
 \subsection{SSID}
 
-The SSID is a unique identifier of the wireless network. All devices connected to a network must agree on the SSID.  It can be up to 32 alpha-numeric characters, or 32 bytes. R. Chandra et al. proposed using an encoding scheme of a 1 byte message identifier, followed by 1 byte containing a 7-bit fragment counter and a flag indicating more fragments are available, finally followed by the data.  This leaves a maximum of 30 bytes available for data, though the available space will realistically be lower as the base SSID will likely include some identifiable string (i.e. "netXXXXXXXXXXXX...", where XXXXX is the data appended to the original SSID, "net").  Assuming a beacon interval of about 10ms, this gives a maximum data rate of 24 Kbps.
+The SSID is a unique identifier of the wireless network. All devices connected to a network must agree on the SSID.  It can be up to 32 alpha-numeric characters, or 32 bytes \cite{c3}. R. Chandra et al. proposed using an encoding scheme of a 1 byte message identifier, followed by 1 byte containing a 7-bit fragment counter and a flag indicating more fragments are available, finally followed by the data.  This leaves a maximum of 30 bytes available for data, though the available space will realistically be lower as the base SSID will likely include some identifiable string (i.e. "netXXXXX...", where XXXXX is the data appended to the original SSID, "net").  Assuming a beacon interval of about 10ms, this gives a maximum data rate of 24 Kbps.
 
 \subsection{BSSID}
 
@@ -94,11 +92,11 @@ The BSSID is a 6 byte field which traditionally represents the media access cont
 
 \subsection{Vendor Information Element}
 
-The 802.11 standard includes a general specification for AP vendors to include up to 253 bytes of data in a special IE.  The format of these information elements is a 3 byte vendor Organizationally Unique Identifier (OUI), a 1 byte vendor-specific type, and up to 252 bytes of data. The IE can either contain the actual OUI with a type to indicate data, providing 252 bytes per frame, or the OUI can be a constant fake value and the type can be used for either data or providing segmentation information.  Again assuming an interval of 10ms, this gives a transmission rate of about 200 Kbps.
+The 802.11 standard includes a general specification for AP vendors to include up to 253 bytes of data in a special IE.  The format of these information elements is a 3 byte vendor Organizationally Unique Identifier (OUI), a 1 byte vendor-specific type, and up to 251 bytes of data. The IE can either contain the actual OUI with a type to indicate data, or the OUI can be a constant fake value for filtering and the type can be used for either data or providing segmentation information.  Again assuming an interval of 10ms, this gives a transmission rate of about 200 Kbps.
 
 \subsection{Information Element Length Field}
 
-Gupta and Rohil proposed a new method, utilizing unused bits in the length field of each IE. Each IE type has a predefined maximum length, some of which require fewer than 8 bits to represent, meaning there are unused bits that are always assumed to be zero.  Firmware modification on the client device would mask out these extra bits to obtain the real length value and reassemble the data using the leftover bits. Based on the table compiled by Gupta and Rohil, this method provides up to 191 bits per frame if every IE is present \cite{c2}. This provides a transmission rate of 19.1 Kbps at a 10ms interval.  Realistically, this will be lower as not every IE will be present.
+Gupta and Rohil proposed a new method, utilizing unused bits in the length field of each IE. Each IE type has a predefined maximum length, some of which require fewer than 8 bits to represent, meaning there are unused bits that are always assumed to be zero.  Firmware modification on the client device would extract the data from these extra bits before passing on the un-stuffed frame to upper layers. Based on the table compiled by Gupta and Rohil, this method provides up to 191 bits per frame if every IE is present \cite{c2}. This provides a transmission rate of 19.1 Kbps at a 10ms interval.  Realistically, this will be lower as not every IE will be present.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -122,11 +120,11 @@ There are numerous potential applications for embedding data in beacon frames.  
 
 Targeted advertising is mutually beneficial to both consumers and marketers.  By narrowing the audience to just those who are likely to act on the advertisement, resources can be used more efficiently.  Location based advertisements are a good way to target a group of people who will likely be interested in a topic, coupon, etc.  However, privacy is a growing concern among users, and using standard location services such as GPS requires either substantial access to the system or an always running application to send location data, neither of which are ideal. Due to the limited range of wireless signals, advertisements served from an AP will only reach devices in the immediate vicinity, thus providing localization without needing to gather user data.
 
-Beacon stuffing can be used to embed advertisement data such that all devices within range of the AP receive the advertisement or coupon.  This would, however, require driver modification in order to present the embedded data to a user.
+Beacon stuffing can be used to embed advertisement data such that all devices within range of the AP receive the advertisement or coupon.  This would, however, require driver modification in order to present the embedded data to a user. \cite{c1}
 
 \subsection{Network monitoring/data extraction}
 
-Since beacon stuffing requires modification of the firmware on the AP, we will assume that we have complete access to the AP, but not necessarily to the networks broadcast by the AP (e.g. a compromised AP).  In such a scenario, we can use beacon stuffing to extract information about a network or specific traffic without showing suspicious traffic.  Special software running on the AP could collect and log data about connected clients and traffic patterns, then dump the log (or a summary) via beacon stuffing on request.  An adversary could use this to gather metadata about a network without ever connecting to it.  Although the actual data transmitted would be secure (assuming some level of transport security), the knowledge of who connects to whom and when could be just as useful.
+Since beacon stuffing requires modification of the firmware on the AP, we will assume that we have complete access to the AP, but not necessarily to the networks broadcast by the AP (e.g. a compromised AP).  In such a scenario, we can use beacon stuffing to extract information about a network or specific traffic without showing suspicious traffic.  Special software running on the AP could collect and log data about connected clients and traffic patterns, then dump the log (or a summary) via beacon stuffing on request. A network administrator could use this to quickly diagnose problems or gauge real-time channel utilization and other AP parameters.  An adversary could use this to gather metadata about a network without ever connecting to it.
 
 \subsection{Low-overhead burst communication}
 
@@ -134,24 +132,24 @@ Consider a situation where a group of devices in the same vicinity, but not nece
 
 \subsection{Covert communication}
 
-In a situation where an agent must receive information from or report back to a supervisor, but the agent cannot risk the discovery of the communication, beacon stuffing can simplify the setup required. If the supervisor can gain control of a public AP, the agent can communicate simply by being in range of the AP without ever connecting or sending any data frames.  In this way, someone trying to identify an undercover agent would need special knowledge of the communication system in order to detect that this communication is taking place.  Without advance knowledge, this would look just like a typical beacon or probe request.  Due to the sheer number of these in a short time frame, manually filtering a network capture is infeasible. A scripted search could be performed, but at that point the attacker knows about the communication channel and we would have to fall back on encryption.
+In a situation where an agent must receive information from or report back to a supervisor, but the agent cannot risk the discovery of the communication, beacon stuffing can simplify the setup required compared to other secure channels. If the supervisor can gain control of a public AP, the agent can communicate simply by being in range of the AP without ever connecting or sending any data frames.  In this way, someone trying to identify an undercover agent would need special knowledge of the communication system in order to detect that this communication is taking place.  Without advance knowledge, this would look just like a typical beacon.  Due to the sheer number of these in a short time frame, manually filtering a network capture is infeasible. A scripted search could be performed, but at that point the attacker knows about the communication channel and we would have to fall back on encryption.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{BEACON FRAME FORMAT}
 
-The 802.11 protocol describes a standard format for beacon frames, which are a type of management frame.  Each beacon frame consists of a MAC header, body, and frame check sequence (FCS).  The MAC header contains information such as source and destination addresses, sequence and fragment IDs, and control flags.  The FCS is simply an error detection mechanism that signals the recipient to discard damaged frames.
+The 802.11 protocol describes a standard format for beacon frames, which are a type of management frame.  Each beacon frame consists of a MAC header, body, and frame check sequence (FCS).  The MAC header (shown in Fig. \ref{fig:beacon}) contains information such as source and destination addresses, sequence and fragment IDs, and control flags.  The FCS is simply an error detection mechanism that signals the recipient to discard damaged frames.
 
-\begin{figure}[h!]
+\begin{figure}[ht]
 % 	\centering
     \includegraphics[width=3.25in]{beaconFrame.png}
     \caption{General structure of 802.11 beacon frame.  The MAC header is shown in light gray, the beacon payload is shown in dark gray.}
     \label{fig:beacon}
 \end{figure}
 
-The body of a beacon frame is made up of several required fields and IE, and may contain additional IE.  The required fields are timestamp, interval, and capabilities, followed by two IE containing the SSID and supported rates. The body may then contain more IE, up to a total frame size of 2304 bytes. Each IE can be up to 257 bytes, containing a 1 byte ID, 1 byte length field, and $N$ data bytes, where $N$ is the value in the length field.  For the vendor IE, the first 4 data bytes are the vendor's OUI and a type specifier, as shown in Figure \ref{fig:vendorIE}.
+The body of a beacon frame is made up of several required fields and IE, and may contain additional IE.  The required fields are timestamp, interval, and capabilities, followed by two IE containing the SSID and supported rates. The body may then contain more IE, up to a total frame size of 2304 bytes. Each IE can be up to 257 bytes, containing a 1 byte ID, 1 byte length field, and $N$ data bytes, where $N$ is the value in the length field.  For the vendor IE, the first 4 data bytes are the vendor's OUI and a type specifier, as shown in Fig. \ref{fig:vendorIE}.
 
-\begin{figure}[h!]
+\begin{figure}[ht]
 % 	\centering
 	\includegraphics[width=3.25in]{vendorIE.png}
     \caption{Structure of Vendor-Specific IE}
@@ -162,7 +160,7 @@ The body of a beacon frame is made up of several required fields and IE, and may
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{IMPLEMENTATION}
 
-As a proof-of-concept to show that beacon stuffing is feasible, we will explore a simple implementation that utilizes the vendor IE.  For sake of brevity and simplicity, we will only consider one AP chipset, the Ralink RT3070L, connected via USB to an Ubuntu host.  The only requirement for this demonstration is that the transmitter chipset supports packet injection.  This should otherwise be completely general.
+As a proof-of-concept to show that beacon stuffing is feasible, we will explore a simple implementation that utilizes the vendor IE.  For sake of brevity and simplicity, we will only consider one AP chipset, the Ralink RT3070L, connected via USB to an Ubuntu host.  The only requirement for this demonstration is that the transmitter chipset supports packet injection.  This should otherwise be completely general.  To view the source code used, visit {\tt https://github.com/emroch/BeaconStuffing}.
 
 \subsection{Data Protection}
 
@@ -172,69 +170,73 @@ Some applications of beacon stuffing may require the data to be secure and most 
 
 While it does not matter how the frame is actually created (it could be written directly in binary), we will use a Python library called Scapy \cite{c4} to assist with frame creation.
 
-To generate a stuffed beacon frame, we first create a basic frame containing the MAC header.  We then split the message into chunks of 251 bytes, if neccessary, and embed them into vendor IE which are then attached to the base frame as a payload.  If there were multiple chunks, we have a fragmented frame, so we will use the MAC header's \textit{fragment ID} field and \textit{More Fragments} flag to indicate to the receiver that the message is fragmented.
+To generate a stuffed beacon frame, we first create a basic frame containing the MAC header.  We then split the message into chunks of 251 bytes, if necessary, and embed them into vendor IE which are then attached to the base frame as a payload.  If there were multiple chunks, we have a fragmented frame, so we will use the MAC header's \textit{fragment ID} field and \textit{More Fragments} flag to indicate to the receiver that the message is fragmented.
 
 \subsection{Message Recovery}
 
 To recover the original message, we must first record the transmitted beacons.  This is easy to do using Wireshark \cite{c6} another computer.  By saving a packet capture file which contains our custom beacon, we can use Scapy and Python again to filter the file and recover the message.  We start by loading the saved capture file, then apply a filter based on some criteria which are unique to our beacons.  This could be an SSID (such as "announcements"), a BSSID, or a special IE.  After obtaining a filtered list of just the stuffed packets, we can dissect them to extract the IE containing our message.  We will store the extracted message pieces in a dictionary keyed with the fragment ID of the packet, which allows us to reconstruct the original message if the beacons are out of order and to determine if any pieces are missing.  Once reassembled, the message can be decrypted and processed.
 
 
+\addtolength{\textheight}{-9.5cm}   % This command serves to balance the column lengths
+                                   % on the last page of the document manually. It shortens
+                                   % the textheight of the last page by a suitable amount.
+                                   % This command does not take effect until the next page
+                                   % so it should come on the page before the last. Make
+                                   % sure that you do not shorten the textheight too much.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{RESULTS AND CONSIDERATIONS}
 
+Using the above procedure, we were successfully package, transmit, receive, and unpack messages both in single beacons and fragmented across multiple frames.  There were, however, several considerations that should be taken into account before deploying a similar technique in the field.
+
+\begin{enumerate}
+\item The encryption scheme used provides both confidentiality and integrity, but relies on a pre-shared key.  This could be problematic for deployments where an AP may have to be set up in advance, running the risk of the shared key being discovered.  If encryption is desired, a secure key exchange would increase confidence, at the cost of increased overhead.
+\item We did not consider a method for reconstructing messages that have missing fragments.  Since each fragment has a unique ID, it would be possible to request a retransmission from the AP in the case of a missing or invalid fragment, but this is beyond the scope of this paper.
+\item This demonstration assumed the use of a dedicated network for the stuffed beacons, however, it would usually make more sense to use an existing network.  In the case of creating a "dummy" network, one should consider how to manage down-time.  For covert applications, it would be better to be consistent and continuously broadcast beacons, even when they don't contain any additional information.  For other applications, it may make more sense to only broadcast beacons when there is information to transmit, thereby reducing bandwidth usage further.
+\item For the sake of simplicity, we used the fragment ID present in the MAC header of the frame.  However, this is treated specially by clients and analysis tools, usually being presented differently than un-fragmented packets.  If the goal is to communicate discreetly, this may not be ideal.  If the data is expected to be larger than a single IE, a custom fragmentation protocol can be designed, perhaps utilizing the vendor type byte.
+\item The techniques discussed in this paper require access to and modification of the firmware controlling the network interfaces on both the AP and client devices.  It may be possible to perform a man-in-the-middle style intercept to modify beacon packets from another AP, but that is beyond the scope of this paper.
+
+\end{enumerate}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{FUTURE WORK}
 
+This paper focused on demonstrating the feasibility of this technique by using a USB Wi-Fi interface.  The next step would be to implement something similar on an actual AP or router. As the interface used here was not responsible for managing real networks, the performance impact could not be measured.  Performing similar tests on an active AP would reveal how many resources are required.
+
+Additionally, this research was focused on targeting layer 2 of the OSI model.  If a similar technique could maintain secrecy while utilizing layer 3, direct firmware modification may not be required.  Layer 3 would also make the technique more protocol agnostic, potentially working with other communication methods such as 802.3 Ethernet and LTE data rather than relying on 802.11 Wi-Fi beacons.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section*{APPENDIX}
 
-\newpage
+% Appendixes should appear before the acknowledgment.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section*{ACKNOWLEDGMENT}
+
+% The preferred spelling of the word ÒacknowledgmentÓ in America is without an ÒeÓ after the ÒgÓ. Avoid the stilted expression, ÒOne of us (R. B. G.) thanks . . .Ó  Instead, try ÒR. B. G. thanksÓ. Put sponsor acknowledgments in the unnumbered footnote on the first page.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{thebibliography}{99}
+
+\bibitem{c1} R. Chandra, J. Padhye, L. Ravindranath, and A. Wolman, “Beacon-Stuffing: Wi-Fi without Associations,” \textit{Eighth IEEE Workshop on Mobile Computing Systems and Applications}, 2007.
+\bibitem{c2} V. Gupta and M. K. Rohil, “Bit-Stuffing in 802. 11 Beacon Frame: Embedding Non-Standard Custom Information,” \textit{International Journal of Computer Applications}, vol. 63, no. 2, pp. 6–12, Feb. 2013.
+\bibitem{c3} M. S. Gast, \textit{802.11 Wireless Networks: The Definitive Guide}, 2nd ed. Beijing: O'Reilly, 2013.
+\bibitem{c4} P. Biondi, “Scapy,” \textit{Scapy}. [Online]. Available: https://scapy.net/. [Accessed: 02-Aug-2018].
+\bibitem{c5} “Fernet (symmetric encryption),” \textit{Welcome to pyca/cryptography}. [Online]. Available: https://cryptography.io/en/latest/fernet/. [Accessed: 02-Aug-2018].
+\bibitem{c6} “Wireshark,” \textit{Wireshark Documentation}. [Online]. Available: https://www.wireshark.org/. [Accessed: 02-Aug-2018].
+
+\end{thebibliography}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % \section{SECTION TITLE}
 
-% \subsection{Selecting a Template (Heading 2)}
-
-% First, confirm that you have the correct template for your paper size. This template has been tailored for output on the US-letter paper size. Please do not use it for A4 paper since the margin requirements for A4 papers may be different from Letter paper size.
-
-% \subsection{Maintaining the Integrity of the Specifications}
-
-% The template is used to format your paper and style the text. All margins, column widths, line spaces, and text fonts are prescribed; please do not alter them. You may note peculiarities. For example, the head margin in this template measures proportionately more than is customary. This measurement and others are deliberate, using specifications that anticipate your paper as one part of the entire proceedings, and not as an independent document. Please do not revise any of the current designations
-
-% \section{MATH}
-
-% Before you begin to format your paper, first write and save the content as a separate text file. Keep your text and graphic files separate until after the text has been formatted and styled. Do not use hard tabs, and limit use of hard returns to only one return at the end of a paragraph. Do not add any kind of pagination anywhere in the paper. Do not number text heads-the template will do that for you.
-
-% Finally, complete content and organizational editing before formatting. Please take note of the following items when proofreading spelling and grammar:
-
-% \subsection{Abbreviations and Acronyms} Define abbreviations and acronyms the first time they are used in the text, even after they have been defined in the abstract. Abbreviations such as IEEE, SI, MKS, CGS, sc, dc, and rms do not have to be defined. Do not use abbreviations in the title or heads unless they are unavoidable.
-
-% \subsection{Units}
-
-% \begin{itemize}
-
-% \item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as Ò3.5-inch disk driveÓ.
-% \item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
-% \item Do not mix complete spellings and abbreviations of units: ÒWb/m2Ó or Òwebers per square meterÓ, not Òwebers/m2Ó.  Spell out units when they appear in text: Ò. . . a few henriesÓ, not Ò. . . a few HÓ.
-% \item Use a zero before decimal points: Ò0.25Ó, not Ò.25Ó. Use Òcm3Ó, not ÒccÓ. (bullet list)
-
-% \end{itemize}
-
-
-% \subsection{Equations}
-
-% The equations are an exception to the prescribed specifications of this template. You will need to determine whether or not your equation should be typed using either the Times New Roman or the Symbol font (please no other font). To create multileveled equations, it may be necessary to treat the equation as a graphic and insert it into the text after your paper is styled. Number equations consecutively. Equation numbers, within parentheses, are to position flush right, as in (1), using a right tab stop. To make your equations more compact, you may use the solidus ( / ), the exp function, or appropriate exponents. Italicize Roman symbols for quantities and variables, but not Greek symbols. Use a long dash rather than a hyphen for a minus sign. Punctuate equations with commas or periods when they are part of a sentence, as in
-
-% $$
-% \alpha + \beta = \chi \eqno{(1)}
-% $$
-
-% Note that the equation is centered using a center tab stop. Be sure that the symbols in your equation have been defined before or immediately following the equation. Use Ò(1)Ó, not ÒEq. (1)Ó or Òequation (1)Ó, except at the beginning of a sentence: ÒEquation (1) is . . .Ó
-
 % \subsection{Some Common Mistakes}
 % \begin{itemize}
-
 
 % \item The word ÒdataÓ is plural, not singular.
 % \item The subscript for the permeability of vacuum ?0, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ÒoÓ.
@@ -250,16 +252,6 @@ To recover the original message, we must first record the transmitted beacons.  
 
 % \end{itemize}
 
-
-% \section{USING THE TEMPLATE}
-
-% Use this sample document as your LaTeX source file to create your document. Save this file as {\bf root.tex}. You have to make sure to use the cls file that came with this distribution. If you use a different style file, you cannot expect to get required margins. Note also that when you are creating your out PDF file, the source file is only part of the equation. {\it Your \TeX\ $\rightarrow$ PDF filter determines the output file size. Even if you make all the specifications to output a letter file in the source - if you filter is set to produce A4, you will only get A4 output. }
-
-% It is impossible to account for all possible situation, one would encounter using \TeX. If you are using multiple \TeX\ files you must make sure that the ``MAIN`` source file is called root.tex - this is particularly important if your conference is using PaperPlaza's built in \TeX\ to PDF conversion tool.
-
-% \subsection{Headings, etc}
-
-% Text heads organize the topics on a relational, hierarchical basis. For example, the paper title is the primary text head because all subsequent material relates and elaborates on this one topic. If there are two or more sub-topics, the next level head (uppercase Roman numerals) should be used and, conversely, if there are not at least two sub-topics, then no subheads should be introduced. Styles named ÒHeading 1Ó, ÒHeading 2Ó, ÒHeading 3Ó, and ÒHeading 4Ó are prescribed.
 
 % \subsection{Figures and Tables}
 
@@ -305,56 +297,6 @@ To recover the original message, we must first record the transmitted beacons.  
                                   % sure that you do not shorten the textheight too much.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% \section*{APPENDIX}
-
-% Appendixes should appear before the acknowledgment.
-
-% \section*{ACKNOWLEDGMENT}
-
-% The preferred spelling of the word ÒacknowledgmentÓ in America is without an ÒeÓ after the ÒgÓ. Avoid the stilted expression, ÒOne of us (R. B. G.) thanks . . .Ó  Instead, try ÒR. B. G. thanksÓ. Put sponsor acknowledgments in the unnumbered footnote on the first page.
-
-
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% References are important to the reader; therefore, each citation must be complete and correct. If at all possible, references should be commonly available publications.
-
-
-
-\begin{thebibliography}{99}
-
-\bibitem{c1} R. Chandra, J. Padhye, L. Ravindranath, and A. Wolman, “Beacon-Stuffing: Wi-Fi without Associations,” \textit{Eighth IEEE Workshop on Mobile Computing Systems and Applications}, 2007.
-\bibitem{c2} V. Gupta and M. K. Rohil, “Bit-Stuffing in 802. 11 Beacon Frame: Embedding Non-Standard Custom Information,” \textit{International Journal of Computer Applications}, vol. 63, no. 2, pp. 6–12, Feb. 2013.
-\bibitem{c3} M. S. Gast, \textit{802.11 Wireless Networks: The Definitive Guide}, 2nd ed. Beijing: O'Reilly, 2013.
-\bibitem{c4} P. Biondi, “Scapy,” \textit{Scapy}. [Online]. Available: https://scapy.net/. [Accessed: 02-Aug-2018].
-\bibitem{c5} “Fernet (symmetric encryption),” \textit{Welcome to pyca/cryptography}. [Online]. Available: https://cryptography.io/en/latest/fernet/. [Accessed: 02-Aug-2018].
-\bibitem{c6} “Wireshark,” \textit{Wireshark Documentation}. [Online]. Available: https://www.wireshark.org/. [Accessed: 02-Aug-2018].
-% \bibitem{c7} C. J. Kaufman, Rocky Mountain Research Lab., Boulder, CO, private communication, May 1995.
-% \bibitem{c8} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ÒElectron spectroscopy studies on magneto-optical media and plastic substrate interfaces(Translation Journals style),Ó IEEE Transl. J. Magn.Jpn., vol. 2, Aug. 1987, pp. 740Ð741 [Dig. 9th Annu. Conf. Magnetics Japan, 1982, p. 301].
-% \bibitem{c9} M. Young, The Techincal Writers Handbook.  Mill Valley, CA: University Science, 1989.
-% \bibitem{c10} J. U. Duncombe, ÒInfrared navigationÑPart I: An assessment of feasibility (Periodical style),Ó IEEE Trans. Electron Devices, vol. ED-11, pp. 34Ð39, Jan. 1959.
-% \bibitem{c11} S. Chen, B. Mulgrew, and P. M. Grant, ÒA clustering technique for digital communications channel equalization using radial basis function networks,Ó IEEE Trans. Neural Networks, vol. 4, pp. 570Ð578, July 1993.
-% \bibitem{c12} R. W. Lucky, ÒAutomatic equalization for digital communication,Ó Bell Syst. Tech. J., vol. 44, no. 4, pp. 547Ð588, Apr. 1965.
-% \bibitem{c13} S. P. Bingulac, ÒOn the compatibility of adaptive controllers (Published Conference Proceedings style),Ó in Proc. 4th Annu. Allerton Conf. Circuits and Systems Theory, New York, 1994, pp. 8Ð16.
-% \bibitem{c14} G. R. Faulhaber, ÒDesign of service systems with priority reservation,Ó in Conf. Rec. 1995 IEEE Int. Conf. Communications, pp. 3Ð8.
-% \bibitem{c15} W. D. Doyle, ÒMagnetization reversal in films with biaxial anisotropy,Ó in 1987 Proc. INTERMAG Conf., pp. 2.2-1Ð2.2-6.
-% \bibitem{c16} G. W. Juette and L. E. Zeffanella, ÒRadio noise currents n short sections on bundle conductors (Presented Conference Paper style),Ó presented at the IEEE Summer power Meeting, Dallas, TX, June 22Ð27, 1990, Paper 90 SM 690-0 PWRS.
-% \bibitem{c17} J. G. Kreifeldt, ÒAn analysis of surface-detected EMG as an amplitude-modulated noise,Ó presented at the 1989 Int. Conf. Medicine and Biological Engineering, Chicago, IL.
-% \bibitem{c18} J. Williams, ÒNarrow-band analyzer (Thesis or Dissertation style),Ó Ph.D. dissertation, Dept. Elect. Eng., Harvard Univ., Cambridge, MA, 1993. 
-% \bibitem{c19} N. Kawasaki, ÒParametric study of thermal and chemical nonequilibrium nozzle flow,Ó M.S. thesis, Dept. Electron. Eng., Osaka Univ., Osaka, Japan, 1993.
-% \bibitem{c20} J. P. Wilkinson, ÒNonlinear resonant circuit devices (Patent style),Ó U.S. Patent 3 624 12, July 16, 1990. 
-
-\end{thebibliography}
-
-
 
 
 \end{document}
