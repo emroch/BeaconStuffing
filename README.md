@@ -4,4 +4,4 @@ This paper discusses the feasibility of using 802.11 beacons to communicate over
 
 ## License
 Python source code is licensed under the [MIT License](src/LICENSE.txt).
-LaTeX source and all assets for the paper are licensed under the [Creative Commons Attribution License](https://creativecommons.org/licenses/by/4.0/)
+LaTeX source and all assets for the paper are licensed under the [Creative Commons Attribution License](https://creativecommons.org/licenses/by/4.0/).
